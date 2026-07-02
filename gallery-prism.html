@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PRISM — Visual Archive</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500&family=DM+Serif+Display:ital@0;1&display=swap');
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #0F1117; --surface: #181B24; --surface2: #1E2230;
+    --teal: #3ECFB8; --teal-dim: #2AA897; --text: #E2E4EA;
+    --muted: #6C7180; --border: #252933;
+  }
+  body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; font-weight: 300; min-height: 100vh; }
+
+  header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 1.2rem 2.5rem; border-bottom: 1px solid var(--border);
+    position: sticky; top: 0; background: var(--bg); z-index: 100;
+  }
+  .logo { font-family: 'DM Serif Display', serif; font-size: 1.4rem; letter-spacing: 0.08em; }
+  .logo-dot { color: var(--teal); }
+  .header-right { display: flex; align-items: center; gap: 2rem; }
+  nav { display: flex; gap: 1.5rem; }
+  nav a { color: var(--muted); text-decoration: none; font-size: 0.82rem; transition: color 0.2s; }
+  nav a:hover { color: var(--text); }
+  .upload-btn {
+    background: var(--teal); color: var(--bg); border: none;
+    font-family: 'DM Sans', sans-serif; font-size: 0.78rem; font-weight: 500;
+    padding: 0.45rem 1.1rem; border-radius: 4px; cursor: pointer; transition: background 0.2s;
+  }
+  .upload-btn:hover { background: var(--teal-dim); }
+
+  .intro-bar {
+    padding: 3rem 2.5rem 1.5rem; max-width: 1100px; margin: 0 auto;
+    display: flex; justify-content: space-between; align-items: flex-end; gap: 2rem;
+  }
+  .intro-text h1 { font-family: 'DM Serif Display', serif; font-size: clamp(2rem, 4vw, 3rem); font-weight: 400; line-height: 1.2; }
+  .intro-text h1 em { font-style: italic; color: var(--teal); }
+  .intro-sub { color: var(--muted); font-size: 0.85rem; margin-top: 0.5rem; max-width: 380px; line-height: 1.7; }
+  .count-badge {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 6px; padding: 0.8rem 1.4rem; text-align: right; flex-shrink: 0;
+  }
+  .count-num { font-family: 'DM Serif Display', serif; font-size: 2rem; color: var(--teal); display: block; line-height: 1; }
+  .count-label { font-size: 0.72rem; color: var(--muted); letter-spacing: 0.1em; text-transform: uppercase; }
+
+  .tabs {
+    max-width: 1100px; margin: 0 auto; padding: 0 2.5rem 1.5rem;
+    display: flex; gap: 0.3rem; flex-wrap: wrap;
+  }
+  .tab-btn {
+    background: var(--surface); border: 1px solid var(--border); color: var(--muted);
+    font-family: 'DM Sans', sans-serif; font-size: 0.78rem; padding: 0.45rem 1rem;
+    border-radius: 100px; cursor: pointer; transition: all 0.2s;
+    display: flex; align-items: center; gap: 0.4rem;
+  }
+  .tab-btn:hover { border-color: var(--teal); color: var(--text); }
+  .tab-btn.active { background: var(--teal); color: var(--bg); border-color: var(--teal); font-weight: 500; }
+  .tab-count { background: rgba(0,0,0,0.18); border-radius: 100px; padding: 0 0.4rem; font-size: 0.68rem; }
+  .tab-btn.active .tab-count { background: rgba(0,0,0,0.25); }
+
+  .gallery-outer { max-width: 1100px; margin: 0 auto; padding: 0 2.5rem 2rem; }
+
+  /* 3-col CSS masonry via grid */
+  .masonry-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+  }
+
+  .gallery-card {
+    background: var(--surface); border-radius: 8px; overflow: hidden;
+    cursor: pointer; border: 1px solid var(--border);
+    transition: border-color 0.25s, transform 0.25s; position: relative;
+  }
+  .gallery-card:hover { border-color: var(--teal); transform: translateY(-3px); }
+
+  .card-img { position: relative; overflow: hidden; }
+  .card-img img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 0.4s ease; }
+  .gallery-card:hover .card-img img { transform: scale(1.05); }
+
+  /* Heights for visual variety */
+  .card-img.h-s { height: 200px; }
+  .card-img.h-m { height: 260px; }
+  .card-img.h-l { height: 340px; }
+
+  /* shimmer placeholder */
+  .card-img::before {
+    content: ''; position: absolute; inset: 0; z-index: 0;
+    background: linear-gradient(90deg,#1a1d28 25%,#22263a 50%,#1a1d28 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.4s infinite;
+  }
+  .card-img img { position: relative; z-index: 1; }
+  @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+
+  .card-overlay {
+    position: absolute; inset: 0; z-index: 2;
+    background: linear-gradient(to top, rgba(15,17,23,0.88) 0%, transparent 55%);
+    opacity: 0; transition: opacity 0.3s; pointer-events: none;
+  }
+  .gallery-card:hover .card-overlay { opacity: 1; }
+  .card-meta {
+    position: absolute; bottom: 0; left: 0; right: 0; z-index: 3;
+    padding: 0.8rem; transform: translateY(4px); opacity: 0; transition: all 0.3s;
+  }
+  .gallery-card:hover .card-meta { transform: translateY(0); opacity: 1; }
+  .card-title { font-size: 0.82rem; font-weight: 500; color: #fff; }
+  .card-tag {
+    display: inline-block; background: var(--teal); color: var(--bg);
+    font-size: 0.62rem; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase;
+    padding: 0.15rem 0.5rem; border-radius: 3px; margin-top: 0.25rem;
+  }
+
+  /* Pagination */
+  .pagination {
+    max-width: 1100px; margin: 0 auto 4rem; padding: 1.5rem 2.5rem 0;
+    border-top: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+  }
+  .pg-btn {
+    background: var(--surface); border: 1px solid var(--border); color: var(--muted);
+    width: 36px; height: 36px; border-radius: 6px; cursor: pointer;
+    font-family: 'DM Sans', sans-serif; font-size: 0.82rem; transition: all 0.2s;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .pg-btn:hover:not(:disabled) { border-color: var(--teal); color: var(--teal); }
+  .pg-btn.active { background: var(--teal); color: var(--bg); border-color: var(--teal); font-weight: 500; }
+  .pg-btn:disabled { opacity: 0.3; cursor: default; }
+  .pg-arrow {
+    background: none; border: 1px solid var(--border); color: var(--muted);
+    padding: 0 0.9rem; height: 36px; border-radius: 6px; cursor: pointer;
+    font-family: 'DM Sans', sans-serif; font-size: 0.8rem; transition: all 0.2s;
+  }
+  .pg-arrow:hover:not(:disabled) { border-color: var(--teal); color: var(--teal); }
+  .pg-arrow:disabled { opacity: 0.3; cursor: default; }
+
+  /* LIGHTBOX */
+  .lb {
+    display: none; position: fixed; inset: 0;
+    background: rgba(10,11,16,0.97); z-index: 1000;
+    align-items: center; justify-content: center;
+  }
+  .lb.open { display: flex; }
+  .lb-inner { display: flex; flex-direction: column; align-items: center; gap: 1.2rem; width: min(700px, 92vw); }
+  .lb-frame {
+    width: 100%; aspect-ratio: 4/3; border-radius: 10px; overflow: hidden;
+    border: 1px solid var(--border);
+  }
+  .lb-frame img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .lb-info { display: flex; justify-content: space-between; align-items: center; width: 100%; }
+  .lb-title-text { font-family: 'DM Serif Display', serif; font-size: 1rem; color: var(--text); }
+  .lb-tag-text {
+    background: var(--surface); color: var(--teal); font-size: 0.7rem; font-weight: 500;
+    padding: 0.25rem 0.7rem; border-radius: 4px; border: 1px solid var(--border);
+  }
+  .lb-nav-row { display: flex; align-items: center; gap: 1rem; justify-content: center; }
+  .lb-nav-btn {
+    background: var(--surface); border: 1px solid var(--border); color: var(--text);
+    width: 42px; height: 42px; border-radius: 8px; cursor: pointer; font-size: 1.1rem;
+    transition: all 0.2s; display: flex; align-items: center; justify-content: center;
+  }
+  .lb-nav-btn:hover { border-color: var(--teal); color: var(--teal); }
+  .lb-num { color: var(--muted); font-size: 0.8rem; min-width: 60px; text-align: center; }
+  .lb-x {
+    position: fixed; top: 1.2rem; right: 1.5rem;
+    background: var(--surface); border: 1px solid var(--border); color: var(--muted);
+    width: 36px; height: 36px; border-radius: 8px; cursor: pointer; font-size: 0.9rem;
+    transition: all 0.2s; display: flex; align-items: center; justify-content: center;
+  }
+  .lb-x:hover { color: var(--text); border-color: var(--muted); }
+
+  @media (max-width: 768px) {
+    .masonry-grid { grid-template-columns: repeat(2, 1fr); }
+    .intro-bar { flex-direction: column; align-items: flex-start; }
+    nav { display: none; }
+    .upload-btn { display: none; }
+  }
+  @media (max-width: 480px) {
+    .masonry-grid { grid-template-columns: 1fr; }
+    header { padding: 1rem 1.2rem; }
+    .gallery-outer, .tabs, .intro-bar, .pagination { padding-left: 1.2rem; padding-right: 1.2rem; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">PRISM<span class="logo-dot">.</span></div>
+  <div class="header-right">
+    <nav>
+      <a href="#">Discover</a>
+      <a href="#">Collections</a>
+      <a href="#">Artists</a>
+      <a href="#">About</a>
+    </nav>
+    <button class="upload-btn">+ Upload</button>
+  </div>
+</header>
+
+<div class="intro-bar">
+  <div class="intro-text">
+    <h1>A living archive of<br><em>visual stories</em></h1>
+    <p class="intro-sub">Curated photography and art across categories — nature, urban spaces, abstract, and human moments.</p>
+  </div>
+  <div class="count-badge">
+    <span class="count-num" id="visCount">9</span>
+    <span class="count-label">Works shown</span>
+  </div>
+</div>
+
+<div class="tabs">
+  <button class="tab-btn active" data-filter="all">All <span class="tab-count" id="cnt-all">27</span></button>
+  <button class="tab-btn" data-filter="nature">Nature <span class="tab-count" id="cnt-nature">9</span></button>
+  <button class="tab-btn" data-filter="urban">Urban <span class="tab-count" id="cnt-urban">6</span></button>
+  <button class="tab-btn" data-filter="abstract">Abstract <span class="tab-count" id="cnt-abstract">6</span></button>
+  <button class="tab-btn" data-filter="people">People <span class="tab-count" id="cnt-people">6</span></button>
+</div>
+
+<div class="gallery-outer">
+  <div class="masonry-grid" id="masonryGrid"></div>
+</div>
+
+<div class="pagination" id="paginationBar"></div>
+
+<!-- LIGHTBOX -->
+<div class="lb" id="lb">
+  <button class="lb-x" id="lbX">✕</button>
+  <div class="lb-inner">
+    <div class="lb-frame">
+      <img id="lbImg" src="" alt="">
+    </div>
+    <div class="lb-info">
+      <div class="lb-title-text" id="lbTitle">Title</div>
+      <div class="lb-tag-text" id="lbTag">Category</div>
+    </div>
+    <div class="lb-nav-row">
+      <button class="lb-nav-btn" id="lbPrev">‹</button>
+      <div class="lb-num" id="lbNum">1 / 27</div>
+      <button class="lb-nav-btn" id="lbNext">›</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const ALL_PHOTOS = [
+  // Nature
+  { cat:'nature',   title:'Forest Floor, October',      url:'https://images.unsplash.com/photo-1448375240586-882707db888b?w=700&q=80', h:'h-m' },
+  { cat:'nature',   title:'Tide Pool, Low Water',        url:'https://images.unsplash.com/photo-1505118380757-91f5f5632de0?w=700&q=80', h:'h-l' },
+  { cat:'nature',   title:'Desert Road, Sunrise',        url:'https://images.unsplash.com/photo-1509316785289-025f5b846b35?w=700&q=80', h:'h-s' },
+  { cat:'nature',   title:'Misty Mountain Valley',       url:'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=700&q=80', h:'h-m' },
+  { cat:'nature',   title:'Golden Wheat Field',          url:'https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=700&q=80', h:'h-s' },
+  { cat:'nature',   title:'Pine Forest Path',            url:'https://images.unsplash.com/photo-1448375240586-882707db888b?w=700&q=80', h:'h-l' },
+  { cat:'nature',   title:'Autumn Lakeside',             url:'https://images.unsplash.com/photo-1507041957456-9c397ce39c97?w=700&q=80', h:'h-m' },
+  { cat:'nature',   title:'Fog Over Rolling Hills',      url:'https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?w=700&q=80', h:'h-s' },
+  { cat:'nature',   title:'River Valley, Early Spring',  url:'https://images.unsplash.com/photo-1501854140801-50d01698950b?w=700&q=80', h:'h-m' },
+  // Urban
+  { cat:'urban',    title:'Underpass at Night',          url:'https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?w=700&q=80', h:'h-l' },
+  { cat:'urban',    title:'Corner Shop, Dusk',           url:'https://images.unsplash.com/photo-1486325212027-8081e485255e?w=700&q=80', h:'h-s' },
+  { cat:'urban',    title:'Old Town Cobblestones',       url:'https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?w=700&q=80', h:'h-m' },
+  { cat:'urban',    title:'Glass and Steel Tower',       url:'https://images.unsplash.com/photo-1515263487990-61b07816b324?w=700&q=80', h:'h-l' },
+  { cat:'urban',    title:'Arched Bridge at Noon',       url:'https://images.unsplash.com/photo-1548247416-ec66f4900b2e?w=700&q=80', h:'h-s' },
+  { cat:'urban',    title:'Stone Cathedral Facade',      url:'https://images.unsplash.com/photo-1478720568477-152d9b164e26?w=700&q=80', h:'h-m' },
+  // Abstract
+  { cat:'abstract', title:'Refracted Blue',              url:'https://images.unsplash.com/photo-1541701494587-cb58502866ab?w=700&q=80', h:'h-s' },
+  { cat:'abstract', title:'Thermal Study #4',            url:'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=700&q=80', h:'h-m' },
+  { cat:'abstract', title:'Light Scatter',               url:'https://images.unsplash.com/photo-1550684376-efcbd6e3f031?w=700&q=80', h:'h-l' },
+  { cat:'abstract', title:'Geometric Study',             url:'https://images.unsplash.com/photo-1523821741446-edb2b68bb7a0?w=700&q=80', h:'h-s' },
+  { cat:'abstract', title:'Color Field No. 7',           url:'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=700&q=80', h:'h-m' },
+  { cat:'abstract', title:'Surface Tension',             url:'https://images.unsplash.com/photo-1519681393784-d120267933ba?w=700&q=80', h:'h-l' },
+  // People
+  { cat:'people',   title:'At the Café Counter',         url:'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=700&q=80', h:'h-m' },
+  { cat:'people',   title:'The Long Walk Home',          url:'https://images.unsplash.com/photo-1531746020798-e6953c6e8e04?w=700&q=80', h:'h-l' },
+  { cat:'people',   title:'Quiet Read',                  url:'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?w=700&q=80', h:'h-s' },
+  { cat:'people',   title:'Street Corner, City Life',    url:'https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?w=700&q=80', h:'h-m' },
+  { cat:'people',   title:'Evening Light Portrait',      url:'https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?w=700&q=80', h:'h-l' },
+  { cat:'people',   title:'The Painter',                 url:'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=700&q=80', h:'h-m' },
+];
+
+const PER_PAGE = 9;
+let currentPage = 1;
+let activeFilter = 'all';
+let curLbIdx = 0;
+let filtered = [...ALL_PHOTOS];
+
+const grid = document.getElementById('masonryGrid');
+const lb = document.getElementById('lb');
+
+function getFiltered() {
+  return activeFilter === 'all' ? ALL_PHOTOS : ALL_PHOTOS.filter(p => p.cat === activeFilter);
+}
+
+function renderPagination(total) {
+  const tp = Math.ceil(total / PER_PAGE);
+  const bar = document.getElementById('paginationBar');
+  bar.innerHTML = '';
+
+  const prev = document.createElement('button');
+  prev.className = 'pg-arrow';
+  prev.textContent = '← Prev';
+  prev.disabled = currentPage === 1;
+  prev.addEventListener('click', () => { if (currentPage > 1) { currentPage--; render(); }});
+  bar.appendChild(prev);
+
+  for (let i = 1; i <= tp; i++) {
+    const btn = document.createElement('button');
+    btn.className = 'pg-btn' + (i === currentPage ? ' active' : '');
+    btn.textContent = i;
+    const page = i;
+    btn.addEventListener('click', () => { currentPage = page; render(); });
+    bar.appendChild(btn);
+  }
+
+  const next = document.createElement('button');
+  next.className = 'pg-arrow';
+  next.textContent = 'Next →';
+  next.disabled = currentPage === tp || tp === 0;
+  next.addEventListener('click', () => { if (currentPage < tp) { currentPage++; render(); }});
+  bar.appendChild(next);
+}
+
+function render() {
+  filtered = getFiltered();
+  const tp = Math.ceil(filtered.length / PER_PAGE);
+  if (currentPage > tp) currentPage = Math.max(1, tp);
+
+  const start = (currentPage - 1) * PER_PAGE;
+  const pageItems = filtered.slice(start, start + PER_PAGE);
+
+  document.getElementById('visCount').textContent = pageItems.length;
+
+  grid.innerHTML = '';
+  pageItems.forEach((photo, i) => {
+    const card = document.createElement('div');
+    card.className = 'gallery-card';
+    card.innerHTML = `
+      <div class="card-img ${photo.h}">
+        <img src="${photo.url}" alt="${photo.title}" loading="lazy">
+        <div class="card-overlay"></div>
+        <div class="card-meta">
+          <div class="card-title">${photo.title}</div>
+          <span class="card-tag">${photo.cat}</span>
+        </div>
+      </div>`;
+    card.addEventListener('click', () => { curLbIdx = start + i; openLb(); });
+    grid.appendChild(card);
+  });
+
+  renderPagination(filtered.length);
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function openLb() {
+  const photo = filtered[curLbIdx];
+  document.getElementById('lbImg').src = photo.url;
+  document.getElementById('lbTitle').textContent = photo.title;
+  document.getElementById('lbTag').textContent = photo.cat.charAt(0).toUpperCase() + photo.cat.slice(1);
+  document.getElementById('lbNum').textContent = (curLbIdx + 1) + ' / ' + filtered.length;
+  lb.classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+function closeLb() { lb.classList.remove('open'); document.body.style.overflow = ''; }
+
+document.getElementById('lbX').addEventListener('click', closeLb);
+lb.addEventListener('click', e => { if (e.target === lb) closeLb(); });
+document.getElementById('lbPrev').addEventListener('click', () => { curLbIdx = (curLbIdx - 1 + filtered.length) % filtered.length; openLb(); });
+document.getElementById('lbNext').addEventListener('click', () => { curLbIdx = (curLbIdx + 1) % filtered.length; openLb(); });
+document.addEventListener('keydown', e => {
+  if (!lb.classList.contains('open')) return;
+  if (e.key === 'ArrowLeft') { curLbIdx = (curLbIdx - 1 + filtered.length) % filtered.length; openLb(); }
+  if (e.key === 'ArrowRight') { curLbIdx = (curLbIdx + 1) % filtered.length; openLb(); }
+  if (e.key === 'Escape') closeLb();
+});
+
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    activeFilter = btn.dataset.filter;
+    currentPage = 1;
+    render();
+  });
+});
+
+render();
+</script>
+</body>
+</html>
