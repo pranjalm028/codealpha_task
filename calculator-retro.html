@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Solar·880 — Pocket Calculator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=VT323&family=Quicksand:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --room-1:#d9d0b8;
+    --room-2:#c4b99c;
+    --case-top:#f2ead8;
+    --case-edge:#d6cbac;
+    --case-edge-deep:#b9ac88;
+    --screen-bg:#93af89;
+    --screen-bg-deep:#7e9c74;
+    --screen-text:#1f2e18;
+    --key-num-bg:#fbf7ee;
+    --key-num-bg-press:#eee6d3;
+    --key-num-text:#3a352a;
+    --key-func-bg:#cabf9d;
+    --key-func-bg-press:#b9ac88;
+    --key-func-text:#3a352a;
+    --key-op-bg:#c1592a;
+    --key-op-bg-press:#a64a21;
+    --key-equals-bg:#a8311f;
+    --key-equals-bg-press:#8c2718;
+    --key-light-text:#fbf3e7;
+    --led:#67c96b;
+    --shadow-soft:rgba(45,38,20,0.28);
+    --shadow-deep:rgba(35,28,14,0.45);
+  }
+
+  *{box-sizing:border-box;}
+
+  html,body{
+    margin:0;
+    min-height:100%;
+    font-family:'Quicksand',sans-serif;
+  }
+
+  body{
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:32px 16px;
+    background:
+      radial-gradient(circle at 30% 15%, var(--room-1), var(--room-2) 70%);
+    background-attachment:fixed;
+  }
+
+  .device{
+    width:100%;
+    max-width:340px;
+    background:linear-gradient(155deg, var(--case-top) 0%, var(--case-edge) 100%);
+    border-radius:28px;
+    padding:22px 18px 26px;
+    box-shadow:
+      0 1px 0 rgba(255,255,255,0.6) inset,
+      0 -10px 18px rgba(0,0,0,0.08) inset,
+      0 22px 38px var(--shadow-soft),
+      0 4px 10px var(--shadow-deep);
+    position:relative;
+  }
+
+  .brand-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding:0 4px 14px;
+  }
+
+  .brand{
+    font-family:'Quicksand',sans-serif;
+    font-weight:700;
+    letter-spacing:0.14em;
+    font-size:13px;
+    color:#5b5236;
+    text-transform:uppercase;
+  }
+
+  .brand small{
+    display:block;
+    font-weight:500;
+    letter-spacing:0.08em;
+    font-size:9px;
+    color:#8a8064;
+    margin-top:2px;
+  }
+
+  .power-dot{
+    width:9px;
+    height:9px;
+    border-radius:50%;
+    background:var(--led);
+    box-shadow:0 0 6px 2px rgba(103,201,107,0.7);
+    animation:pulse 2.6s ease-in-out infinite;
+  }
+
+  @keyframes pulse{
+    0%,100%{opacity:1;}
+    50%{opacity:0.45;}
+  }
+
+  .screen{
+    background:linear-gradient(165deg, var(--screen-bg) 0%, var(--screen-bg-deep) 100%);
+    border-radius:12px;
+    padding:18px 16px 14px;
+    box-shadow:
+      0 2px 5px rgba(0,0,0,0.35) inset,
+      0 1px 0 rgba(255,255,255,0.15);
+    position:relative;
+    overflow:hidden;
+  }
+
+  .screen::before{
+    content:"";
+    position:absolute;
+    inset:0;
+    background:repeating-linear-gradient(
+      to bottom,
+      rgba(0,0,0,0.05) 0px,
+      rgba(0,0,0,0.05) 1px,
+      transparent 1px,
+      transparent 3px
+    );
+    pointer-events:none;
+  }
+
+  .screen-expression{
+    min-height:16px;
+    font-family:'VT323', monospace;
+    font-size:16px;
+    letter-spacing:0.04em;
+    color:var(--screen-text);
+    opacity:0.7;
+    text-align:right;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+
+  .screen-main{
+    font-family:'VT323', monospace;
+    font-size:52px;
+    line-height:1.05;
+    color:var(--screen-text);
+    text-align:right;
+    white-space:nowrap;
+    overflow:hidden;
+    text-shadow:0 1px 0 rgba(255,255,255,0.18);
+    transition:font-size 0.12s ease;
+  }
+
+  .screen-main.shrink{ font-size:36px; }
+
+  .solar-strip{
+    display:flex;
+    gap:5px;
+    justify-content:flex-end;
+    padding:10px 6px 4px;
+  }
+
+  .solar-strip span{
+    width:14px;
+    height:8px;
+    background:linear-gradient(160deg,#3c4f8a,#1f2c52);
+    border-radius:1px;
+    box-shadow:0 1px 0 rgba(255,255,255,0.15) inset;
+  }
+
+  .keys{
+    display:grid;
+    grid-template-columns:repeat(4, 1fr);
+    gap:10px;
+    margin-top:8px;
+  }
+
+  .key{
+    appearance:none;
+    border:none;
+    border-radius:14px;
+    padding:16px 0;
+    font-family:'Quicksand',sans-serif;
+    font-size:18px;
+    font-weight:600;
+    cursor:pointer;
+    user-select:none;
+    box-shadow:
+      0 1px 0 rgba(255,255,255,0.4) inset,
+      0 3px 0 rgba(0,0,0,0.18),
+      0 5px 8px rgba(0,0,0,0.18);
+    transition:transform 0.06s ease, box-shadow 0.06s ease, background 0.08s ease;
+  }
+
+  .key:active, .key.pressed{
+    transform:translateY(2px);
+    box-shadow:
+      0 1px 0 rgba(255,255,255,0.25) inset,
+      0 1px 0 rgba(0,0,0,0.18),
+      0 2px 3px rgba(0,0,0,0.18);
+  }
+
+  .key-num{ background:var(--key-num-bg); color:var(--key-num-text); }
+  .key-num:active, .key-num.pressed{ background:var(--key-num-bg-press); }
+
+  .key-func{ background:var(--key-func-bg); color:var(--key-func-text); font-size:15px; }
+  .key-func:active, .key-func.pressed{ background:var(--key-func-bg-press); }
+
+  .key-op{ background:var(--key-op-bg); color:var(--key-light-text); font-size:20px; }
+  .key-op:active, .key-op.pressed{ background:var(--key-op-bg-press); }
+
+  .key-equals{
+    background:var(--key-equals-bg);
+    color:var(--key-light-text);
+    grid-row:span 1;
+    font-size:20px;
+  }
+  .key-equals:active, .key-equals.pressed{ background:var(--key-equals-bg-press); }
+
+  .key-zero{ grid-column:span 2; }
+
+  .key:focus-visible{
+    outline:3px solid #2d6cdf;
+    outline-offset:2px;
+  }
+
+  .hint{
+    text-align:center;
+    font-size:11px;
+    color:#8a8064;
+    letter-spacing:0.05em;
+    margin-top:16px;
+  }
+
+  @media (max-width:360px){
+    .screen-main{ font-size:42px; }
+    .key{ padding:14px 0; font-size:16px; }
+  }
+</style>
+</head>
+<body>
+
+  <main class="device" role="group" aria-label="Solar 880 pocket calculator">
+    <div class="brand-row">
+      <span class="brand">Solar·880<small>pocket calculator</small></span>
+      <span class="power-dot" aria-hidden="true"></span>
+    </div>
+
+    <div class="screen">
+      <div class="screen-expression" id="expression" aria-hidden="true"></div>
+      <div class="screen-main" id="display" aria-live="polite">0</div>
+    </div>
+
+    <div class="solar-strip" aria-hidden="true">
+      <span></span><span></span><span></span><span></span><span></span><span></span>
+    </div>
+
+    <div class="keys">
+      <button class="key key-func" data-action="clear" aria-label="All clear">AC</button>
+      <button class="key key-func" data-action="backspace" aria-label="Backspace">⌫</button>
+      <button class="key key-func" data-action="percent" aria-label="Percent">%</button>
+      <button class="key key-op" data-op="÷" aria-label="Divide">÷</button>
+
+      <button class="key key-num" data-num="7">7</button>
+      <button class="key key-num" data-num="8">8</button>
+      <button class="key key-num" data-num="9">9</button>
+      <button class="key key-op" data-op="×" aria-label="Multiply">×</button>
+
+      <button class="key key-num" data-num="4">4</button>
+      <button class="key key-num" data-num="5">5</button>
+      <button class="key key-num" data-num="6">6</button>
+      <button class="key key-op" data-op="−" aria-label="Subtract">−</button>
+
+      <button class="key key-num" data-num="1">1</button>
+      <button class="key key-num" data-num="2">2</button>
+      <button class="key key-num" data-num="3">3</button>
+      <button class="key key-op" data-op="+" aria-label="Add">+</button>
+
+      <button class="key key-func" data-action="sign" aria-label="Toggle sign">±</button>
+      <button class="key key-num key-zero" data-num="0">0</button>
+      <button class="key key-func" data-action="decimal" aria-label="Decimal point">.</button>
+      <button class="key key-equals" data-action="equals" aria-label="Equals">=</button>
+    </div>
+
+    <p class="hint">keyboard ready — type numbers, + − * / · enter · esc</p>
+  </main>
+
+<script>
+(function(){
+  const display = document.getElementById('display');
+  const expression = document.getElementById('expression');
+
+  let buffer = '0';
+  let firstOperand = null;
+  let operatorSym = null;
+  let resetBuffer = false;
+
+  function formatNum(value){
+    if(value === 'Error') return 'Error';
+    const num = parseFloat(value);
+    if(Number.isNaN(num)) return 'Error';
+    let str = value.toString();
+    const neg = str.startsWith('-');
+    if(neg) str = str.slice(1);
+    let [intPart, decPart] = str.split('.');
+    intPart = intPart.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    return (neg ? '-' : '') + intPart + (decPart !== undefined ? '.' + decPart : '');
+  }
+
+  function compute(a, op, b){
+    const x = parseFloat(a), y = parseFloat(b);
+    if(Number.isNaN(x) || Number.isNaN(y)) return 'Error';
+    let r;
+    switch(op){
+      case '+': r = x + y; break;
+      case '−': r = x - y; break;
+      case '×': r = x * y; break;
+      case '÷': r = y === 0 ? NaN : x / y; break;
+      default: r = y;
+    }
+    if(!Number.isFinite(r)) return 'Error';
+    r = Math.round((r + Number.EPSILON) * 1e10) / 1e10;
+    return String(r);
+  }
+
+  function refresh(){
+    const shown = (operatorSym && !resetBuffer)
+      ? compute(firstOperand, operatorSym, buffer)
+      : (operatorSym ? firstOperand : buffer);
+
+    display.textContent = formatNum(shown);
+    display.classList.toggle('shrink', display.textContent.length > 9);
+
+    if(operatorSym && !resetBuffer){
+      expression.textContent = `${formatNum(firstOperand)} ${operatorSym} ${formatNum(buffer)}`;
+    } else if(operatorSym){
+      expression.textContent = `${formatNum(firstOperand)} ${operatorSym}`;
+    } else {
+      expression.textContent = '';
+    }
+  }
+
+  function inputDigit(d){
+    if(buffer === '0' || resetBuffer){
+      buffer = d;
+      resetBuffer = false;
+    } else if(buffer.replace('-','').length < 12){
+      buffer += d;
+    }
+    refresh();
+  }
+
+  function inputDecimal(){
+    if(resetBuffer){
+      buffer = '0.';
+      resetBuffer = false;
+    } else if(!buffer.includes('.')){
+      buffer += '.';
+    }
+    refresh();
+  }
+
+  function chooseOperator(op){
+    if(buffer === 'Error'){ clearAll(); }
+    if(operatorSym && !resetBuffer){
+      firstOperand = compute(firstOperand, operatorSym, buffer);
+      buffer = firstOperand;
+    } else {
+      firstOperand = buffer;
+    }
+    operatorSym = op;
+    resetBuffer = true;
+    refresh();
+  }
+
+  function equals(){
+    if(operatorSym === null || firstOperand === null) return;
+    const result = compute(firstOperand, operatorSym, buffer);
+    expression.textContent = `${formatNum(firstOperand)} ${operatorSym} ${formatNum(buffer)} =`;
+    buffer = result;
+    firstOperand = null;
+    operatorSym = null;
+    resetBuffer = true;
+    display.textContent = formatNum(buffer);
+    display.classList.toggle('shrink', display.textContent.length > 9);
+  }
+
+  function clearAll(){
+    buffer = '0';
+    firstOperand = null;
+    operatorSym = null;
+    resetBuffer = false;
+    refresh();
+  }
+
+  function backspace(){
+    if(buffer === 'Error'){ clearAll(); return; }
+    resetBuffer = false;
+    buffer = buffer.length > 1 ? buffer.slice(0, -1) : '0';
+    refresh();
+  }
+
+  function toggleSign(){
+    if(buffer === '0' || buffer === 'Error') return;
+    buffer = buffer.startsWith('-') ? buffer.slice(1) : '-' + buffer;
+    refresh();
+  }
+
+  function percent(){
+    if(buffer === 'Error') return;
+    buffer = String(parseFloat(buffer) / 100);
+    refresh();
+  }
+
+  function flash(selector){
+    const btn = document.querySelector(selector);
+    if(!btn) return;
+    btn.classList.add('pressed');
+    setTimeout(() => btn.classList.remove('pressed'), 110);
+  }
+
+  document.querySelectorAll('.key').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if(btn.dataset.num !== undefined) inputDigit(btn.dataset.num);
+      else if(btn.dataset.op) chooseOperator(btn.dataset.op);
+      else if(btn.dataset.action === 'clear') clearAll();
+      else if(btn.dataset.action === 'backspace') backspace();
+      else if(btn.dataset.action === 'percent') percent();
+      else if(btn.dataset.action === 'sign') toggleSign();
+      else if(btn.dataset.action === 'decimal') inputDecimal();
+      else if(btn.dataset.action === 'equals') equals();
+    });
+  });
+
+  document.addEventListener('keydown', (e) => {
+    const k = e.key;
+    if(k >= '0' && k <= '9'){ inputDigit(k); flash(`[data-num="${k}"]`); }
+    else if(k === '.'){ inputDecimal(); flash('[data-action="decimal"]'); }
+    else if(k === '+'){ chooseOperator('+'); flash('[data-op="+"]'); }
+    else if(k === '-'){ chooseOperator('−'); flash('[data-op="−"]'); }
+    else if(k === '*'){ chooseOperator('×'); flash('[data-op="×"]'); }
+    else if(k === '/'){ e.preventDefault(); chooseOperator('÷'); flash('[data-op="÷"]'); }
+    else if(k === 'Enter' || k === '='){ e.preventDefault(); equals(); flash('[data-action="equals"]'); }
+    else if(k === 'Backspace'){ backspace(); flash('[data-action="backspace"]'); }
+    else if(k === 'Escape'){ clearAll(); flash('[data-action="clear"]'); }
+    else if(k === '%'){ percent(); flash('[data-action="percent"]'); }
+  });
+
+  refresh();
+})();
+</script>
+</body>
+</html>
